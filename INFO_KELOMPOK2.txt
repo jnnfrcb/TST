@@ -1,0 +1,207 @@
+INFO KELOMPOK 2 - TaskMate REST API (Laravel + JWT)
+
+1. INFORMASI DATABASE
+
+Nama database : tst_kelompok
+Koneksi       : MySQL
+Host          : 127.0.0.1
+Port          : 3306
+Username      : root
+Password      : (kosong)
+
+Cara menjalankan aplikasi:
+1. composer install
+2. Salin .env.example menjadi .env dan sesuaikan konfigurasi database.
+3. php artisan key:generate
+4. php artisan jwt:secret
+5. php artisan migrate:fresh --seed
+6. php artisan serve
+
+Alamat API: http://127.0.0.1:8000
+
+2. AKUN TESTING (DATABASE SEEDER)
+
+ADMIN
+Email    : admin.taskmate@example.test
+Password : password123
+
+USER 1
+Email    : demo.taskmate@example.test
+Password : password123
+
+USER 2
+Email    : other.taskmate@example.test
+Password : password123
+
+User kedua digunakan untuk pengujian ownership, yaitu memastikan pengguna tidak dapat melihat atau mengubah data milik pengguna lain.
+
+Data awal milik demo.taskmate:
+- Profile
+- Mata kuliah ID 1
+- Kategori ID 1
+- Tugas ID 1
+
+3. AUTENTIKASI
+
+Login melalui:
+POST /api/login
+
+Setelah berhasil login, ambil access_token dari response.
+
+Gunakan token pada header:
+Authorization: Bearer <token>
+Accept: application/json
+
+4. STRUKTUR TABEL DAN RELASI
+
+- users: tabel utama pengguna dengan role admin dan user.
+- profiles: berelasi dengan users melalui user_id.
+- mata_kuliah: berelasi dengan users melalui user_id.
+- kategori: berelasi dengan users melalui user_id.
+- tugas: berelasi dengan users, mata_kuliah, dan kategori.
+- pengumpulan: berelasi dengan users dan tugas.
+
+5. DAFTAR ENDPOINT API
+
+Keterangan hak akses:
+PUBLIK = tanpa login.
+USER + ADMIN = membutuhkan token JWT dan dapat digunakan oleh kedua role.
+ADMIN = hanya dapat digunakan oleh admin.
+
+A. ENDPOINT PUBLIK
+GET    /api/ping       - Mengecek API.
+POST   /api/register   - Registrasi akun user.
+POST   /api/login      - Login dan mendapatkan token.
+
+B. ENDPOINT AUTENTIKASI
+GET    /api/me         - Melihat informasi akun yang sedang login.
+POST   /api/logout     - Logout dan melakukan blacklist token.
+
+C. ENDPOINT MATA KULIAH
+GET     /api/mata-kuliah
+GET     /api/mata-kuliah/{id}
+POST    /api/mata-kuliah
+PUT     /api/mata-kuliah/{id}
+PATCH   /api/mata-kuliah/{id}
+DELETE  /api/mata-kuliah/{id} (ADMIN)
+
+D. ENDPOINT KATEGORI
+GET     /api/kategori
+GET     /api/kategori/{id}
+POST    /api/kategori
+PUT     /api/kategori/{id}
+PATCH   /api/kategori/{id}
+DELETE  /api/kategori/{id} (ADMIN)
+
+E. ENDPOINT TUGAS
+GET     /api/tugas
+GET     /api/tugas/{id}
+POST    /api/tugas
+PUT     /api/tugas/{id}
+PATCH   /api/tugas/{id}
+DELETE  /api/tugas/{id} (ADMIN)
+
+F. ENDPOINT PENGUMPULAN
+GET     /api/pengumpulan
+GET     /api/pengumpulan/{id}
+POST    /api/pengumpulan
+PUT     /api/pengumpulan/{id}
+PATCH   /api/pengumpulan/{id}
+DELETE  /api/pengumpulan/{id} (ADMIN)
+
+G. ENDPOINT PROFILE
+GET     /api/profile
+GET     /api/profile/{id}
+POST    /api/profile
+PUT     /api/profile/{id}
+PATCH   /api/profile/{id}
+DELETE  /api/profile/{id} (ADMIN)
+
+Hak akses endpoint C-G:
+- GET, POST, PUT, PATCH: USER + ADMIN.
+- DELETE: ADMIN saja.
+- User hanya dapat melihat dan mengubah data miliknya sendiri berdasarkan user_id.
+- Admin dapat mengelola seluruh data.
+
+6. CONTOH BODY REQUEST (JSON)
+
+MATA KULIAH
+{
+  "user_id": 1,
+  "nama_mata_kuliah": "Pemrograman Web",
+  "dosen": "Dosen A",
+  "semester": "3"
+}
+
+KATEGORI
+{
+  "user_id": 1,
+  "nama_kategori": "Kuis"
+}
+
+TUGAS
+{
+  "user_id": 1,
+  "mata_kuliah_id": 1,
+  "kategori_id": 1,
+  "judul": "Tugas Baru",
+  "deskripsi": "Deskripsi tugas",
+  "deadline": "2027-01-20 23:59:00",
+  "status": "belum"
+}
+
+PENGUMPULAN
+{
+  "user_id": 1,
+  "tugas_id": 1,
+  "tanggal_selesai": "2027-01-10 10:00:00",
+  "catatan": "Tugas sudah selesai"
+}
+
+PROFILE
+{
+  "user_id": 2,
+  "nim": "2100000001",
+  "no_telepon": "08123456789",
+  "program_studi": "Sistem Informasi",
+  "semester": 3
+}
+
+Catatan:
+- Pada request role user, user_id ditentukan otomatis berdasarkan token login melalui middleware.
+- Pada request role admin, user_id digunakan untuk menentukan pemilik data jika didukung oleh controller.
+- Sesuaikan ID relasi dengan data yang tersedia di database.
+
+7. DAFTAR RESPONSE KESALAHAN
+
+401 Unauthorized:
+Token tidak tersedia atau tidak valid.
+
+403 Forbidden:
+Role tidak memiliki izin, misalnya user mencoba menghapus data.
+
+404 Not Found:
+Data tidak ditemukan atau data bukan milik user yang sedang login.
+
+422 Unprocessable Entity:
+Data request tidak memenuhi validasi.
+
+8. POSTMAN COLLECTION
+
+Lokasi file:
+TaskMate/postman/KELOMPOK2.postman_collection.json
+
+Petunjuk:
+- Jalankan request Login USER untuk mendapatkan token user.
+- Jalankan request Login ADMIN untuk mendapatkan token admin.
+- Token disimpan pada variabel collection.
+- Gunakan token sesuai role untuk menguji hak akses.
+
+9. PEMBAGIAN TABEL ANGGOTA
+
+Anggota 1 : profiles
+Anggota 2 : mata_kuliah
+Anggota 3 : kategori
+Anggota 4 : tugas dan pengumpulan
+
+Setiap anggota bertanggung jawab memahami controller, model, migration, relasi, dan endpoint tabel yang dikerjakan.
